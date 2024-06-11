@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teachable Machine Image Classifier</title>
+  <style>
+    #results-container {
+      margin-top: 20px;
+    }
+
+    #results-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    #results-table th, #results-table td {
+      border: 1px solid black;
+      padding: 5px;
+      text-align: center;
+    }
+
+    #results-table th {
+      background-color: #f2f2f2;
+    }
+
+    .part-image {
+      width: 100px;
+      height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div>Teachable Machine Image Model</div>
+  <input type="file" id="imageUpload" accept="image/*">
+  <button type="button" onclick="uploadImage()">Upload Image</button>
+
+  <div id="results-container">
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>부분 이미지</th>
+          <th>예측 결과</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+  <script type="text/javascript">
+    // Teachable Machine 모델 경로
+    const URL = "./my_model_2/";
+
+    let model, resultsContainer, resultsTable;
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(modelURL, metadataURL);
+      resultsContainer = document.getElementById("results-container");
+      resultsTable = document.getElementById("results-table").getElementsByTagName("tbody")[0];
+    }
+
+    async function uploadImage() {
+      const fileInput = document.getElementById('imageUpload');
+      const file = fileInput.files[0];
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const img = new Image();
+          img.onload = async () => {
+            // 이미지를 8등분
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const partWidth = img.width / 8;
+            const partHeight = img.height / 8;
+
+            const predictions = {};
+            for (let i = 0; i < 8; i++) {
+              const partCanvas = document.createElement('canvas');
+              const partCtx = partCanvas.getContext('2d');
+              partCanvas.width = partWidth;
+              partCanvas.height = partHeight;
+              partCtx.drawImage(canvas, i * partWidth, 0, partWidth, img.height, 0, 0, partWidth, partHeight);
+
+              // Teachable Machine 모델로 예측
+              const prediction = await model.predict(partCanvas);
+              const probability = prediction[0].probability.toFixed(2);
+
+              // 결과 출력
+              const row = resultsTable.insertRow();
+              const partImageCell = row.insertCell();
+              const partImage = document.createElement("img");
+              partImage.src = partCanvas.toDataURL('image/png');
+              partImage.classList.add("part-image");
+              partImageCell.appendChild(partImage);
+              const resultCell = row.insertCell();
+              resultCell.textContent = `a_${i + 1}: ${probability}`;
+
+              // 예측 결과 저장
+              predictions[`a_${i + 1}`] = parseFloat(probability); // 문자열을 숫자로 변환
+            }
+
+            // a_1~a_8 예측 결과를 localStorage에 저장
+            localStorage.setItem("predictions", JSON.stringify(predictions)); 
+
+            // fire.html로 이동
+            window.location.href = "fire.html";
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

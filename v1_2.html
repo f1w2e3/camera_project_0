@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teachable Machine Image Classifier</title>
+  <style>
+    #results-container {
+      margin-top: 20px;
+    }
+
+    #results-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    #results-table th, #results-table td {
+      border: 1px solid black;
+      padding: 5px;
+      text-align: center;
+    }
+
+    #results-table th {
+      background-color: #f2f2f2;
+    }
+
+    .part-image {
+      width: 100px;
+      height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div>Teachable Machine Image Model</div>
+  <video id="video" width="640" height="480" autoplay></video>
+  <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+  <div id="results-container">
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>부분 이미지</th>
+          <th>예측 결과</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+  <script type="text/javascript">
+    // Teachable Machine 모델 경로
+    const URL = "./my_model_2/";
+
+    let model, resultsContainer, resultsTable, video, canvas, intervalId;
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(modelURL, metadataURL);
+      resultsContainer = document.getElementById("results-container");
+      resultsTable = document.getElementById("results-table").getElementsByTagName("tbody")[0];
+      video = document.getElementById("video");
+      canvas = document.getElementById("canvas");
+
+      // 카메라 권한 요청
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          video.srcObject = stream;
+          video.onloadedmetadata = () => {
+            video.play();
+          };
+        })
+        .catch(err => {
+          console.error("카메라 권한 요청 실패: ", err);
+        });
+    }
+
+    async function captureAndPredict() {
+      // 캔버스에 비디오 프레임 그리기
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // 이미지를 8등분
+      const partWidth = canvas.width / 8;
+      const partHeight = canvas.height / 8;
+
+      const predictions = {};
+      for (let i = 0; i < 8; i++) {
+        const partCanvas = document.createElement('canvas');
+        const partCtx = partCanvas.getContext('2d');
+        partCanvas.width = partWidth;
+        partCanvas.height = partHeight;
+        partCtx.drawImage(canvas, i * partWidth, 0, partWidth, canvas.height, 0, 0, partWidth, partHeight);
+
+        // Teachable Machine 모델로 예측
+        const prediction = await model.predict(partCanvas);
+        const probability = prediction[0].probability.toFixed(2);
+
+        // 결과 출력
+        const row = resultsTable.insertRow();
+        const partImageCell = row.insertCell();
+        const partImage = document.createElement("img");
+        partImage.src = partCanvas.toDataURL('image/png');
+        partImage.classList.add("part-image");
+        partImageCell.appendChild(partImage);
+        const resultCell = row.insertCell();
+        resultCell.textContent = `a_${i + 1}: ${probability}`;
+
+        // 예측 결과 저장
+        predictions[`a_${i + 1}`] = parseFloat(probability);
+      }
+
+      // 파이어베이스에 데이터 전송 (firebase.js 파일의 함수 호출)
+      sendPredictionsToFirebase(predictions); 
+    }
+
+    // 5초 간격으로 사진 촬영 및 예측
+    function startCapture() {
+      intervalId = setInterval(captureAndPredict, 5000); // 5초 간격으로 captureAndPredict 함수 실행
+    }
+
+    // 촬영 중지
+    function stopCapture() {
+      clearInterval(intervalId);
+    }
+
+    init();
+    startCapture(); // 촬영 시작
+  </script>
+</body>
+</html>

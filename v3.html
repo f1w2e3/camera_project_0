@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teachable Machine Image Classifier</title>
+  <style>
+    #results-container {
+      margin-top: 20px;
+    }
+
+    #results-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    #results-table th, #results-table td {
+      border: 1px solid black;
+      padding: 5px;
+      text-align: center;
+    }
+
+    #results-table th {
+      background-color: #f2f2f2;
+    }
+
+    .part-image {
+      width: 100px;
+      height: 100px;
+    }
+
+    #merged-images-container {
+      margin-top: 20px;
+    }
+
+    #merged-images-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    #merged-images-table th, #merged-images-table td {
+      border: 1px solid black;
+      padding: 5px;
+      text-align: center;
+    }
+
+    #merged-images-table th {
+      background-color: #f2f2f2;
+    }
+
+    #clustered-points {
+      margin-top: 20px;
+      width: 500px;
+      height: 500px;
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <div>Teachable Machine Image Model</div>
+  <input type="file" id="imageUpload" accept="image/*">
+  <button type="button" onclick="uploadImage()">Upload Image</button>
+
+  <div id="results-container">
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>부분 이미지</th>
+          <th>예측 결과</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="merged-images-container">
+    <h3>병합된 이미지 정보</h3>
+    <div id="merged-images-text"></div>
+    <table id="merged-images-table">
+      <thead>
+        <tr>
+          <th>병합된 이미지</th>
+          <th>확률</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    <canvas id="clustered-points"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+  <script type="text/javascript">
+    // Teachable Machine 모델 경로
+    const URL = "./my_model_2/";
+
+    let model, resultsContainer, resultsTable, mergedImagesTable, mergedImagesText;
+    let predictions = {}; // 20개 이미지의 확률 저장
+    let mergedImages = {}; // 병합된 이미지 정보 저장
+    let imagePoints = []; // 좌표 평면에 표시할 이미지 중심 좌표
+    let clusteredPointsCanvas; // 군집 결과를 그릴 캔버스
+    let clusteredPointsContext; // 군집 결과를 그릴 캔버스의 컨텍스트
+
+    async function init() {
+      const modelURL = URL + "model.json";
+      const metadataURL = URL + "metadata.json";
+
+      model = await tmImage.load(modelURL, metadataURL);
+      resultsContainer = document.getElementById("results-container");
+      resultsTable = document.getElementById("results-table").getElementsByTagName("tbody")[0];
+      mergedImagesTable = document.getElementById("merged-images-table").getElementsByTagName("tbody")[0];
+      mergedImagesText = document.getElementById("merged-images-text");
+      clusteredPointsCanvas = document.getElementById("clustered-points");
+      clusteredPointsContext = clusteredPointsCanvas.getContext("2d");
+    }
+
+    async function uploadImage() {
+      const fileInput = document.getElementById('imageUpload');
+      const file = fileInput.files[0];
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const img = new Image();
+          img.onload = async () => {
+            // 이미지를 20등분
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            const partWidth = img.width / 20;
+            const partHeight = img.height / 20;
+
+            for (let i = 0; i < 20; i++) {
+              const partCanvas = document.createElement('canvas');
+              const partCtx = partCanvas.getContext('2d');
+              partCanvas.width = partWidth;
+              partCanvas.height = partHeight;
+              partCtx.drawImage(canvas, i * partWidth, 0, partWidth, img.height, 0, 0, partWidth, partHeight);
+
+              // Teachable Machine 모델로 예측
+              const prediction = await model.predict(partCanvas);
+              const probability = prediction[0].probability.toFixed(2);
+
+              // 결과 출력
+              const row = resultsTable.insertRow();
+              const partImageCell = row.insertCell();
+              const partImage = document.createElement("img");
+              partImage.src = partCanvas.toDataURL('image/png');
+              partImage.classList.add("part-image");
+              partImageCell.appendChild(partImage);
+              const resultCell = row.insertCell();
+              resultCell.textContent = `b_${i + 1}: ${probability}`;
+
+              // 예측 결과 저장
+              predictions[`b_${i + 1}`] = parseFloat(probability);
+              imagePoints.push({
+                x: (i % 5) / 4, // x 좌표 계산 (0 ~ 1 사이)
+                y: Math.floor(i / 5) / 4 // y 좌표 계산 (0 ~ 1 사이)
+              });
+            }
+
+            // 병합 알고리즘 시작
+            await mergeImages(predictions);
+
+            // 병합된 이미지 정보 출력
+            showMergedImagesInfo();
+
+            // 군집 분석 실행
+            performClustering();
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function mergeImages(predictions) {
+      // 초기 유망 영역 선택 (가장 높은 확률을 가진 이미지)
+      let currentImage = Object.keys(predictions).reduce((a, b) => predictions[a] > predictions[b] ? a : b);
+
+      // 병합 알고리즘 반복
+      while (true) {
+        // 인접 이미지를 탐색하여 병합 시도
+        const adjacentImages = getAdjacentImages(currentImage);
+        let merged = false;
+
+        for (const adjacentImage of adjacentImages) {
+          // 병합 시도
+          const mergedImage = await mergeImage(currentImage, adjacentImage);
+          if (mergedImage) {
+            currentImage = mergedImage; // 병합된 이미지를 새로운 유망 영역으로 설정
+            merged = true;
+            break;
+          }
+        }
+
+        // 모든 인접 이미지와의 병합이 실패하면 다른 유망 영역 선택
+        if (!merged) {
+          // 새 유망 영역을 찾기 위한 루프 (다른 유망한 영역이 없으면 종료)
+          let newPromisingImage = null;
+          for (const key in predictions) {
+            if (key !== currentImage && predictions[key] > 0.7) {
+              newPromisingImage = key;
+              break;
+            }
+          }
+          // 다른 유망한 영역이 없으면 알고리즘 종료
+          if (newPromisingImage === null) break;
+          currentImage = newPromisingImage;
+        }
+      }
+    }
+
+    // 인접 이미지 목록 반환
+    function getAdjacentImages(image) {
+      const imageIndex = parseInt(image.substring(1)) - 1;
+      const adjacentIndexes = [imageIndex - 5, imageIndex - 1, imageIndex + 1, imageIndex + 5];
+      return adjacentIndexes.filter(index => index >= 0 && index < 20)
+        .map(index => `b_${index + 1}`);
+    }
+
+    // 이미지 병합 (Teachable Machine 모델로 예측하여 확률 비교)
+    async function mergeImage(image1, image2) {
+      // 병합된 이미지 생성
+      const mergedCanvas = document.createElement("canvas");
+      const mergedCtx = mergedCanvas.getContext("2d");
+      // 이미지 가로 세로 비율 고려하여 병합 (아래는 5x4 이미지 배열 가정)
+      if (parseInt(image1.substring(1)) % 5 === 0 && parseInt(image2.substring(1)) % 5 === 0) {
+        // 같은 열에 있는 경우
+        mergedCanvas.width = 100;
+        mergedCanvas.height = 200;
+        const image1Canvas = document.querySelector(`#results-table tbody tr:nth-child(${parseInt(image1.substring(1))}) td:first-child img`).parentElement.parentElement;
+        const image2Canvas = document.querySelector(`#results-table tbody tr:nth-child(${parseInt(image2.substring(1))}) td:first-child img`).parentElement.parentElement;
+        mergedCtx.drawImage(image1Canvas, 0, 0);
+        mergedCtx.drawImage(image2Canvas, 0, 100);
+      } else if (parseInt(image1.substring(1)) + 1 === parseInt(image2.substring(1)) || parseInt(image1.substring(1)) - 1 === parseInt(image2.substring(1))) {
+        // 같은 행에 있는 경우
+        mergedCanvas.width = 200;
+        mergedCanvas.height = 100;
+        const image1Canvas = document.querySelector(`#results-table tbody tr:nth-child(${parseInt(image1.substring(1))}) td:first-child img`).parentElement.parentElement;
+        const image2Canvas = document.querySelector(`#results-table tbody tr:nth-child(${parseInt(image2.substring(1))}) td:first-child img`).parentElement.parentElement;
+        mergedCtx.drawImage(image1Canvas, 0, 0);
+        mergedCtx.drawImage(image2Canvas, 100, 0);
+      } else {
+        // 인접하지 않은 경우
+        return null;
+      }
+
+      // Teachable Machine 모델로 예측
+      const prediction = await model.predict(mergedCanvas);
+      const mergedProbability = prediction[0].probability;
+
+      // 병합 확률 비교
+      if (mergedProbability >= 0.7) {
+        // 병합 성공
+        const mergedImageKey = `${image1}+${image2}`; // 병합된 이미지 키 생성
+        mergedImages[mergedImageKey] = mergedProbability;
+        return mergedImageKey;
+      } else {
+        // 병합 실패
+        return null;
+      }
+    }
+
+    // 병합된 이미지 정보 출력
+    function showMergedImagesInfo() {
+      // 병합된 이미지 목록 출력
+      for (const mergedImageKey in mergedImages) {
+        const row = mergedImagesTable.insertRow();
+        const mergedImageCell = row.insertCell();
+        mergedImageCell.textContent = mergedImageKey;
+        const probabilityCell = row.insertCell();
+        probabilityCell.textContent = mergedImages[mergedImageKey].toFixed(2);
+      }
+
+      // 병합된 이미지 텍스트 출력
+      const mergedImageText = Object.keys(mergedImages).join(", ");
+      mergedImagesText.textContent = `병합된 이미지: ${mergedImageText}`;
+    }
+
+    // 군집 분석 실행 (K-Means 알고리즘 직접 구현)
+    function performClustering() {
+      const data = imagePoints.map(point => [point.x, point.y]); // 군집 분석 데이터 준비
+      const bestSilhouette = -1;
+      let bestClusters = null;
+      let bestK = null;
+
+      // 실루엣 방법을 사용하여 최적의 군집 개수 찾기 (0 ~ 4까지)
+      for (let k = 0; k <= 4; k++) {
+        const clusters = kMeansClustering(data, k); // K-Means 군집 분석 실행
+        const silhouette = calculateSilhouette(data, clusters); // 실루엣 계산
+        if (silhouette > bestSilhouette) {
+          bestSilhouette = silhouette;
+          bestClusters = clusters;
+          bestK = k;
+        }
+      }
+
+      // 최적의 군집 결과를 캔버스에 표시
+      drawClusteredPoints(bestClusters, bestK);
+    }
+
+    // K-Means 군집 분석 함수 (직접 구현)
+    function kMeansClustering(data, k) {
+      // 초기 중심점 랜덤 선택
+      const centroids = initializeCentroids(data, k);
+      let clusters = {}; // 군집 결과 저장
+
+      // 반복
+      let converged = false;
+      while (!converged) {
+        clusters = assignToClusters(data, centroids); // 각 데이터 포인트를 가장 가까운 중심점에 할당
+        const newCentroids = updateCentroids(clusters); // 새로운 중심점 계산
+        converged = compareCentroids(centroids, newCentroids); // 중심점 변화 확인
+        centroids = newCentroids;
+      }
+
+      return clusters;
+    }
+
+    // 초기 중심점 랜덤 선택
+    function initializeCentroids(data, k) {
+      const centroids = [];
+      for (let i = 0; i < k; i++) {
+        centroids.push(data[Math.floor(Math.random() * data.length)]);
+      }
+      return centroids;
+    }
+
+    // 각 데이터 포인트를 가장 가까운 중심점에 할당
+    function assignToClusters(data, centroids) {
+      const clusters = {};
+      for (let i = 0; i < centroids.length; i++) {
+        clusters[i] = [];
+      }
+
+      for (let i = 0; i < data.length; i++) {
+        let closestCentroid = 0;
+        let minDistance = Infinity;
+        for (let j = 0; j < centroids.length; j++) {
+          const distance = calculateDistance(data[i], centroids[j]);
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestCentroid = j;
+          }
+        }
+        clusters[closestCentroid].push(i);
+      }
+      return clusters;
+    }
+
+    // 새로운 중심점 계산
+    function updateCentroids(clusters) {
+      const newCentroids = [];
+      for (const clusterIndex in clusters) {
+        const cluster = clusters[clusterIndex];
+        if (cluster.length > 0) {
+          const centroid = calculateCentroid(cluster.map(index => imagePoints[index]));
+          newCentroids.push(centroid);
+        }
+      }
+      return newCentroids;
+    }
+
+    // 중심점 변화 확인
+    function compareCentroids(centroids1, centroids2) {
+      if (centroids1.length !== centroids2.length) return false;
+      for (let i = 0; i < centroids1.length; i++) {
+        if (centroids1[i][0] !== centroids2[i][0] || centroids1[i][1] !== centroids2[i][1]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // 두 점 사이의 거리 계산
+    function calculateDistance(point1, point2) {
+      return Math.sqrt(Math.pow(point1[0] - point2[0], 2) + Math.pow(point1[1] - point2[1], 2));
+    }
+
+    // 중심점 계산
+    function calculateCentroid(points) {
+      let xSum = 0;
+      let ySum = 0;
+      for (const point of points) {
+        xSum += point.x;
+        ySum += point.y;
+      }
+      return [xSum / points.length, ySum / points.length];
+    }
+
+    // 실루엣 계산
+    function calculateSilhouette(data, clusters) {
+      let silhouetteSum = 0;
+      for (const clusterIndex in clusters) {
+        const cluster = clusters[clusterIndex];
+        for (const pointIndex of cluster) {
+          const point = data[pointIndex];
+          const a = calculateAverageDistance(point, cluster.map(index => data[index])); // 같은 군집 내 평균 거리
+          let b = Infinity; // 다른 군집 내 평균 거리
+          for (const otherClusterIndex in clusters) {
+            if (otherClusterIndex !== clusterIndex) {
+              const otherCluster = clusters[otherClusterIndex];
+              const distance = calculateAverageDistance(point, otherCluster.map(index => data[index]));
+              if (distance < b) {
+                b = distance;
+              }
+            }
+          }
+          silhouetteSum += (b - a) / Math.max(a, b); // 실루엣 값 계산
+        }
+      }
+      return silhouetteSum / data.length; // 평균 실루엣 값
+    }
+
+    // 평균 거리 계산
+    function calculateAverageDistance(point, otherPoints) {
+      let distanceSum = 0;
+      for (const otherPoint of otherPoints) {
+        distanceSum += calculateDistance(point, otherPoint);
+      }
+      return distanceSum / otherPoints.length;
+    }
+
+    // 군집 결과를 캔버스에 그리기
+    function drawClusteredPoints(clusters, k) {
+      // 캔버스 초기화
+      clusteredPointsContext.clearRect(0, 0, clusteredPointsCanvas.width, clusteredPointsCanvas.height);
+
+      // 각 군집에 다른 색상으로 점 표시
+      for (let i = 0; i < k; i++) {
+        const clusterColor = `hsl(${i * 360 / k}, 50%, 50%)`; // 군집 색상 설정
+        for (const pointIndex of clusters[i]) {
+          const point = imagePoints[pointIndex];
+          clusteredPointsContext.fillStyle = clusterColor;
+          clusteredPointsContext.beginPath();
+          clusteredPointsContext.arc(point.x * clusteredPointsCanvas.width, point.y * clusteredPointsCanvas.height, 5, 0, 2 * Math.PI);
+          clusteredPointsContext.fill();
+        }
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
