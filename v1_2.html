@@ -81,11 +81,11 @@
       canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
       // 이미지를 8등분
-      const partWidth = canvas.width / 9;
-      const partHeight = canvas.height / 9;
+      const partWidth = canvas.width / 8;
+      const partHeight = canvas.height / 8;
 
       const predictions = {};
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < 8; i++) {
         const partCanvas = document.createElement('canvas');
         const partCtx = partCanvas.getContext('2d');
         partCanvas.width = partWidth;
