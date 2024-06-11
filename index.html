@@ -7,8 +7,31 @@
 
 <h1>기본 알고리즘 메뉴 선택</h1>
 
-<button onclick="location.href='v1_1.html'">기본 알고리즘 v.1_1</button>
-<button onclick="location.href='v1_2.html'">기본 알고리즘 v.1_2</button>
+<h2>기본 알고리즘 v.1: 이미지 8등분 분할 및 객체 탐지</h2>
+<p><strong>목표:</strong> 단일 이미지 내 다수의 객체 탐지를 위한 기본 알고리즘 구현 및 검증.</p>
+<p><strong>방법:</strong> 입력 이미지를 8등분으로 분할하여 각 영역에 사람이 있는지 여부를 판단한다. 각 영역의 사람 존재 유무를 판단하여 최대 8명까지의 사람 존재 여부를 확인한다.</p>
+
+<h2>기본 알고리즘 v.1 카메라 모드: 실시간 이미지 8등분 분할 및 객체 탐지</h2>
+<p><strong>목표:</strong> 기본 알고리즘 v.1을 실시간 카메라 영상에 적용하여 5초 간격으로 이미지를 분석한다.</p>
+<p><strong>방법:</strong></p>
+<ul>
+  <li>웹캠을 통해 실시간으로 영상을 캡처한다.</li>
+  <li>캡처된 영상을 8등분으로 분할한다.</li>
+  <li>각 분할된 이미지를 Teachable Machine 모델로 입력하여 사람 존재 여부를 판단한다.</li>
+  <li>각 분할된 이미지에서 사람이 탐지되면 카운트를 증가시켜 최종적으로 이미지 내 사람의 수를 계산한다.</li>
+  <li>5초 간격으로 위 과정을 반복한다.</li>
+</ul>
+
+<h2>기본 알고리즘 v.2: 이미지 2등분 분할 및 객체 탐지</h2>
+<p><strong>목표:</strong> 기본 알고리즘 v.1의 간소화 및 실시간 적용성 강화</p>
+<p><strong>방법:</strong> 입력 이미지를 2등분(좌우)하여 각 영역에 사람이 있는지 여부를 판단한다. 좌우 영역에 사람이 있는지 여부를 확인하여 사람 존재 여부를 판별한다.</p>
+
+<h2>기본 알고리즘 v.3: 이미지 병합 및 k-평균 군집화</h2>
+<p><strong>목표:</strong> 기존 알고리즘의 한계 극복 및 정확한 테이블별 사람 존재 여부 판별</p>
+
+
+<button onclick="location.href='v1_1.html'">기본 알고리즘 v.1</button>
+<button onclick="location.href='v1_2.html'">기본 알고리즘 v.1 카메라 모드</button>
 <button onclick="location.href='v2.html'">기본 알고리즘 v.2</button>
 <button onclick="location.href='v3.html'">기본 알고리즘 v.3</button>
 
