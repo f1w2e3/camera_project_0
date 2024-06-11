@@ -80,11 +80,11 @@
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
 
-            const partWidth = img.width / 8;
-            const partHeight = img.height / 8;
+            const partWidth = img.width / 9;
+            const partHeight = img.height / 9;
 
             const predictions = {};
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; i < 9; i++) {
               const partCanvas = document.createElement('canvas');
               const partCtx = partCanvas.getContext('2d');
               partCanvas.width = partWidth;
