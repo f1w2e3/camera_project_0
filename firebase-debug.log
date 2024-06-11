@@ -503,3 +503,37 @@
 [info] i  hosting[teach2-0]: Serving hosting files from: public {"metadata":{"emulator":{"name":"hosting"},"message":"Serving hosting files from: \u001b[1mpublic\u001b[22m"}}
 [info] ✔  hosting[teach2-0]: Local server: http://localhost:5000 {"metadata":{"emulator":{"name":"hosting"},"message":"Local server: \u001b[4m\u001b[1mhttp://localhost:5000\u001b[22m\u001b[24m"}}
 [info] i  hosting: ::1 - - [11/Jun/2024:05:55:27 +0000] "GET / HTTP/1.1" 200 444 "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15" {"metadata":{"emulator":{"name":"hosting"},"message":"::1 - - [11/Jun/2024:05:55:27 +0000] \"GET / HTTP/1.1\" 200 444 \"-\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15\""}}
+[debug] [2024-06-11T06:01:29.724Z] ----------------------------------------------------------------------
+[debug] [2024-06-11T06:01:29.729Z] Command:       /usr/local/bin/node /usr/local/bin/firebase serve
+[debug] [2024-06-11T06:01:29.729Z] CLI Version:   13.11.2
+[debug] [2024-06-11T06:01:29.729Z] Platform:      darwin
+[debug] [2024-06-11T06:01:29.729Z] Node Version:  v20.13.1
+[debug] [2024-06-11T06:01:29.729Z] Time:          Tue Jun 11 2024 15:01:29 GMT+0900 (대한민국 표준시)
+[debug] [2024-06-11T06:01:29.729Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-06-11T06:01:29.794Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-06-11T06:01:29.794Z] > authorizing via signed-in user (daywedset@gmail.com)
+[debug] [2024-06-11T06:01:29.794Z] [iam] checking project teach2-0 for permissions ["firebase.projects.get"]
+[debug] [2024-06-11T06:01:29.795Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/teach2-0:testIamPermissions [none]
+[debug] [2024-06-11T06:01:29.795Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/teach2-0:testIamPermissions x-goog-quota-user=projects/teach2-0
+[debug] [2024-06-11T06:01:29.795Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/teach2-0:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2024-06-11T06:01:30.093Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/teach2-0:testIamPermissions 200
+[debug] [2024-06-11T06:01:30.094Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/teach2-0:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2024-06-11T06:01:30.096Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/teach2-0 [none]
+[debug] [2024-06-11T06:01:30.509Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/teach2-0 200
+[debug] [2024-06-11T06:01:30.509Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/teach2-0 {"projectId":"teach2-0","projectNumber":"333892947376","displayName":"teach2-0","name":"projects/teach2-0","resources":{"hostingSite":"teach2-0","storageBucket":"teach2-0.appspot.com","locationId":"us-central"},"state":"ACTIVE","etag":"1_34df8e08-c00a-4a7c-9def-9f810e62e4c2"}
+[info] 
+[info] === Serving from '/Users/me/Desktop/teach1'...
+[info] 
+[debug] [2024-06-11T06:01:30.513Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/teach2-0/sites 
+[debug] [2024-06-11T06:01:31.223Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/teach2-0/sites 200
+[debug] [2024-06-11T06:01:31.223Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/teach2-0/sites {"sites":[{"name":"projects/teach2-0/sites/teach2-0","defaultUrl":"https://teach2-0.web.app","type":"DEFAULT_SITE"}]}
+[debug] [2024-06-11T06:01:31.224Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/teach2-0/webApps/-/config [none]
+[debug] [2024-06-11T06:01:32.352Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/teach2-0/webApps/-/config 200
+[debug] [2024-06-11T06:01:32.352Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/teach2-0/webApps/-/config {"projectId":"teach2-0","appId":"1:333892947376:web:2ad2b11258f160ceb89a75","storageBucket":"teach2-0.appspot.com","locationId":"us-central","apiKey":"AIzaSyCkjXqq7wxphAbHuFtlTBa6JiLVhBtmPr4","authDomain":"teach2-0.firebaseapp.com","messagingSenderId":"333892947376"}
+[debug] [2024-06-11T06:01:32.360Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/teach2-0 [none]
+[debug] [2024-06-11T06:01:32.645Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/teach2-0 200
+[debug] [2024-06-11T06:01:32.646Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/teach2-0 {"projectId":"teach2-0","projectNumber":"333892947376","displayName":"teach2-0","name":"projects/teach2-0","resources":{"hostingSite":"teach2-0","storageBucket":"teach2-0.appspot.com","locationId":"us-central"},"state":"ACTIVE","etag":"1_34df8e08-c00a-4a7c-9def-9f810e62e4c2"}
+[info] i  hosting[teach2-0]: Serving hosting files from: public {"metadata":{"emulator":{"name":"hosting"},"message":"Serving hosting files from: \u001b[1mpublic\u001b[22m"}}
+[info] ✔  hosting[teach2-0]: Local server: http://localhost:5000 {"metadata":{"emulator":{"name":"hosting"},"message":"Local server: \u001b[4m\u001b[1mhttp://localhost:5000\u001b[22m\u001b[24m"}}
+[info] i  hosting: ::1 - - [11/Jun/2024:06:01:37 +0000] "GET / HTTP/1.1" 200 - "-" "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15" {"metadata":{"emulator":{"name":"hosting"},"message":"::1 - - [11/Jun/2024:06:01:37 +0000] \"GET / HTTP/1.1\" 200 - \"-\" \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15\""}}
