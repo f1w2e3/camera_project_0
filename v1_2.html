@@ -81,8 +81,8 @@
       canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
       // 이미지를 8등분
-      const partWidth = canvas.width / 8;
-      const partHeight = canvas.height / 8;
+      const partWidth = Math.floor(canvas.width / 8); // 8로 나눈 몫 (내림)
+      const partHeight = Math.floor(canvas.height / 8); // 8로 나눈 몫 (내림)
 
       const predictions = {};
       for (let i = 0; i < 8; i++) {
@@ -90,7 +90,7 @@
         const partCtx = partCanvas.getContext('2d');
         partCanvas.width = partWidth;
         partCanvas.height = partHeight;
-        partCtx.drawImage(canvas, i * partWidth, 0, partWidth, canvas.height, 0, 0, partWidth, partHeight);
+        partCtx.drawImage(canvas, i * partWidth, 0, partWidth, partHeight, 0, 0, partWidth, partHeight); // 이미지 크기 조정 없이 그리기
 
         // Teachable Machine 모델로 예측
         const prediction = await model.predict(partCanvas);

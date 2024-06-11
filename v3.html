@@ -124,21 +124,15 @@
           const img = new Image();
           img.onload = async () => {
             // 이미지를 20등분
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
-
-            const partWidth = img.width / 20;
-            const partHeight = img.height / 20;
+            const partWidth = Math.floor(img.width / 20); // 20으로 나눈 몫 (내림)
+            const partHeight = Math.floor(img.height / 20); // 20으로 나눈 몫 (내림)
 
             for (let i = 0; i < 20; i++) {
               const partCanvas = document.createElement('canvas');
               const partCtx = partCanvas.getContext('2d');
               partCanvas.width = partWidth;
               partCanvas.height = partHeight;
-              partCtx.drawImage(canvas, i * partWidth, 0, partWidth, img.height, 0, 0, partWidth, partHeight);
+              partCtx.drawImage(img, i * partWidth, 0, partWidth, partHeight, 0, 0, partWidth, partHeight); // 이미지 크기 조정 없이 그리기
 
               // Teachable Machine 모델로 예측
               const prediction = await model.predict(partCanvas);
@@ -227,6 +221,7 @@
       // 병합된 이미지 생성
       const mergedCanvas = document.createElement("canvas");
       const mergedCtx = mergedCanvas.getContext("2d");
+
       // 이미지 가로 세로 비율 고려하여 병합 (아래는 5x4 이미지 배열 가정)
       if (parseInt(image1.substring(1)) % 5 === 0 && parseInt(image2.substring(1)) % 5 === 0) {
         // 같은 열에 있는 경우
